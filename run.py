@@ -70,13 +70,31 @@ class DetModel:
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/swin/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco_20210903_104808-b92c91f1.pth'    
         },
+        # 'SWIN-B':{
+        #   'config':
+        #     '/home/adithyas/Swin-Transformer-Object-Detection/configs/swin/cascade_mask_rcnn_swin_small_patch4_window7_mstrain_480-800_giou_4conv1f_adamw_3x_coco.py',
+        #     'model':
+        #     '/home/adithyas/ViTPose/weights/swin_base.pth'    
+        # },
+        # 'ViT-B':{
+        #   'config':
+        #     '/home/adithyas/ViTDet/configs/ViTDet/ViTDet-ViT-Base-100e.py',
+        #     'model':
+        #     '/home/adithyas/ViTPose/weights/ViT-Base-GPU.pth'    
+        # },
+        # 'ViTAE-B':{
+        #   'config':
+        #     '/home/adithyas/ViTDet/configs/ViTDet/ViTDet-ViTAE-Base-100e.py',
+        #     'model':
+        #     '/home/adithyas/ViTPose/weights/ViTAE-Base-GPU.pth'    
+        # },
     }
 
     def __init__(self, device: str | torch.device):
         device = torch.device("cuda")
         self.device = torch.device(device)
-        self._load_all_models_once()
-        self.model_name = 'YOLOX-l'
+        # self._load_all_models_once()
+        self.model_name = 'SWIN-S'
         self.model = self._load_model(self.model_name)
 
     def _load_all_models_once(self) -> None:
@@ -110,10 +128,12 @@ class DetModel:
             image: np.ndarray,
             detection_results: list[np.ndarray],
             score_threshold: float = 0.3) -> np.ndarray:
-
-        # TODO: need to make changes for SWIN
-        person_det = [detection_results[0]] + [np.array([]).reshape(0, 5)] * 79
-        
+                
+        if "YOLO" in self.model_name:
+            person_det = [detection_results[0]] + [np.array([]).reshape(0, 5)] * 79
+        elif "SWIN" in self.model_name:
+            person_det = detection_results[0]
+            
         image = image[:, :, ::-1]  # RGB -> BGR
         vis = self.model.show_result(image,
                                      person_det,
@@ -293,7 +313,7 @@ def main(args):
             start = time()
             # from pdb import set_trace; set_trace()
             det_out, det_vis = det_model.run(args.detmodel_name, frame, args.box_score_threshold)
-            pose_out, pose_vis = pose_model.run(args.posemodel_name, det_vis, det_out, args.box_score_threshold, \
+            pose_out, pose_vis = pose_model.run(args.posemodel_name, frame, det_out, args.box_score_threshold, \
                         args.kpt_score_threshold, args.vis_dot_radius, args.vis_line_thickness)
             end = time() - start
             print("Time for frame: {}".format(end))
@@ -309,13 +329,13 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--video_file", type=str, default="/home/adithyas/ViTPose/input/1.mp4")
-    parser.add_argument("--save_file", type=str, default="/home/adithyas/ViTPose/output/1_out_H.mp4")
+    parser.add_argument("--video_file", type=str, default="/home/adithyas/ViTPose/input/10.mp4")
+    parser.add_argument("--save_file", type=str, default="/home/adithyas/ViTPose/output/10_out_H.mp4")
     parser.add_argument("--codec", type=str, default="MJPG")
-    parser.add_argument("--detmodel_name", type=str, default="YOLOX-l")
-    parser.add_argument("--box_score_threshold", type=float, default=0.5)
+    parser.add_argument("--detmodel_name", type=str, default="SWIN-S")
+    parser.add_argument("--box_score_threshold", type=float, default=0.3)
     parser.add_argument("--posemodel_name", type=str, default="ViTPose-H (multi-task train, COCO)")
-    parser.add_argument("--kpt_score_threshold", type=float, default=0.3)
+    parser.add_argument("--kpt_score_threshold", type=float, default=0.2)
     parser.add_argument("--vis_dot_radius", type=int, default=4)
     parser.add_argument("--vis_line_thickness", type=int, default=2)
     args = parser.parse_args()
