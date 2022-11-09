@@ -36,58 +36,40 @@ class DetModel:
     MODEL_DICT = {
         'YOLOX-tiny': {
             'config':
-            '/home/adithyas/mmdetection/configs/yolox/yolox_tiny_8x8_300e_coco.py',
+            '/mnt/adithya/mmdetection/configs/yolox/yolox_tiny_8x8_300e_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_tiny_8x8_300e_coco/yolox_tiny_8x8_300e_coco_20211124_171234-b4047906.pth',
         },
         'YOLOX-s': {
             'config':
-            '/home/adithyas/mmdetection/configs/yolox/yolox_s_8x8_300e_coco.py',
+            '/mnt/adithya/mmdetection/configs/yolox/yolox_s_8x8_300e_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth',
         },
         'YOLOX-l': {
             'config':
-            '/home/adithyas/mmdetection/configs/yolox/yolox_l_8x8_300e_coco.py',
+            '/mnt/adithya/mmdetection/configs/yolox/yolox_l_8x8_300e_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth',
         },
         'YOLOX-x': {
             'config':
-            '/home/adithyas/mmdetection/configs/yolox/yolox_x_8x8_300e_coco.py',
+            '/mnt/adithya/mmdetection/configs/yolox/yolox_x_8x8_300e_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_x_8x8_300e_coco/yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth',
         },
         'SWIN-T':{
           'config':
-            '/home/adithyas/mmdetection/configs/swin/mask_rcnn_swin-t-p4-w7_fpn_fp16_ms-crop-3x_coco.py',
+            '/mnt/adithya/mmdetection/configs/swin/mask_rcnn_swin-t-p4-w7_fpn_fp16_ms-crop-3x_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/swin/mask_rcnn_swin-t-p4-w7_fpn_fp16_ms-crop-3x_coco/mask_rcnn_swin-t-p4-w7_fpn_fp16_ms-crop-3x_coco_20210908_165006-90a4008c.pth'    
         },
         'SWIN-S':{
           'config':
-            '/home/adithyas/mmdetection/configs/swin/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco.py',
+            '/mnt/adithya/mmdetection/configs/swin/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco.py',
             'model':
             'https://download.openmmlab.com/mmdetection/v2.0/swin/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco/mask_rcnn_swin-s-p4-w7_fpn_fp16_ms-crop-3x_coco_20210903_104808-b92c91f1.pth'    
-        },
-        # 'SWIN-B':{
-        #   'config':
-        #     '/home/adithyas/Swin-Transformer-Object-Detection/configs/swin/cascade_mask_rcnn_swin_small_patch4_window7_mstrain_480-800_giou_4conv1f_adamw_3x_coco.py',
-        #     'model':
-        #     '/home/adithyas/ViTPose/weights/swin_base.pth'    
-        # },
-        # 'ViT-B':{
-        #   'config':
-        #     '/home/adithyas/ViTDet/configs/ViTDet/ViTDet-ViT-Base-100e.py',
-        #     'model':
-        #     '/home/adithyas/ViTPose/weights/ViT-Base-GPU.pth'    
-        # },
-        # 'ViTAE-B':{
-        #   'config':
-        #     '/home/adithyas/ViTDet/configs/ViTDet/ViTDet-ViTAE-Base-100e.py',
-        #     'model':
-        #     '/home/adithyas/ViTPose/weights/ViTAE-Base-GPU.pth'    
-        # },
+        }
     }
 
     def __init__(self, device: str | torch.device):
@@ -118,10 +100,16 @@ class DetModel:
         vis = self.visualize_detection_results(image, out, score_threshold)
         return out, vis
 
-    def detect(self, image: np.ndarray) -> list[np.ndarray]:
+    def detect(self, image, score_thr=0.3) -> list[np.ndarray]:
         image = image[:, :, ::-1]  # RGB -> BGR
-        out = inference_detector(self.model, image)
-        return out
+        bboxes = inference_detector(self.model, image)
+        bboxes = bboxes[0][0] 
+        if score_thr > 0:
+            assert bboxes.shape[1] == 5
+            scores = bboxes[:, -1]
+            inds = scores > score_thr
+            bboxes = bboxes[inds, :]
+        return [bboxes]
 
     def visualize_detection_results(
             self,
@@ -155,27 +143,27 @@ class PoseModel:
     #  MODEL_DICT = {
     #     'ViTPose-B (single-task train)': {
     #         'config':
-    #         '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+    #         '/mnt/adithya/ViTPoseconfigs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
     #         'model': 'models/vitpose-b.pth',
     #     },
     #     'ViTPose-L (single-task train)': {
     #         'config':
-    #         '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+    #         '/mnt/adithya/ViTPoseconfigs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
     #         'model': 'models/vitpose-l.pth',
     #     },
     #     'ViTPose-B (multi-task train, COCO)': {
     #         'config':
-    #         '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+    #         '/mnt/adithya/ViTPoseconfigs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
     #         'model': 'models/vitpose-b-multi-coco.pth',
     #     },
     #     'ViTPose-L (multi-task train, COCO)': {
     #         'config':
-    #         '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+    #         '/mnt/adithya/ViTPoseconfigs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
     #         'model': 'models/vitpose-l-multi-coco.pth',
     #     },
     #     'ViTPose-H (multi-task train, COCO)': {
     #         'config':
-    #         '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py',
+    #         '/mnt/adithya/ViTPoseconfigs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py',
     #         'model': 'models/vitpose-h-multi-coco.pth',
     #     },
     # }
@@ -183,28 +171,28 @@ class PoseModel:
     MODEL_DICT = {
         'ViTPose-B (single-task train)': {
             'config':
-            '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
-            'model': '/home/adithyas/ViTPose/models/vitpose-b.pth',
+            '/mnt/adithya/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+            'model': '/mnt/adithya/ViTPose/models/vitpose-b.pth',
         },
         'ViTPose-L (single-task train)': {
             'config':
-            '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
-            'model': '/home/adithyas/ViTPose/models/vitpose-l.pth',
+            '/mnt/adithya/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+            'model': '/mnt/adithya/ViTPose/models/vitpose-l.pth',
         },
         'ViTPose-B (multi-task train, COCO)': {
             'config':
-            '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
-            'model': '/home/adithyas/ViTPose/models/vitpose-b-multi-coco.pth',
+            '/mnt/adithya/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_base_coco_256x192.py',
+            'model': '/mnt/adithya/ViTPose/models/vitpose-b-multi-coco.pth',
         },
         'ViTPose-L (multi-task train, COCO)': {
             'config':
-            '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
-            'model': '/home/adithyas/ViTPose/models/vitpose-l-multi-coco.pth',
+            '/mnt/adithya/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_large_coco_256x192.py',
+            'model': '/mnt/adithya/ViTPose/models/vitpose-l-multi-coco.pth',
         },
         'ViTPose-H (multi-task train, COCO)': {
             'config':
-            '/home/adithyas/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py',
-            'model': '/home/adithyas/ViTPose/models/vitpose-h-multi-coco.pth',
+            '/mnt/adithya/ViTPose/configs/body/2d_kpt_sview_rgb_img/topdown_heatmap/coco/ViTPose_huge_coco_256x192.py',
+            'model': '/mnt/adithya/ViTPose/models/vitpose-h-multi-coco.pth',
         },
     }
 
@@ -329,8 +317,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--video_file", type=str, default="/home/adithyas/ViTPose/input/10.mp4")
-    parser.add_argument("--save_file", type=str, default="/home/adithyas/ViTPose/output/10_out_H.mp4")
+    parser.add_argument("--video_file", type=str, default="/mnt/adithya/ViTPoseinput/10.mp4")
+    parser.add_argument("--save_file", type=str, default="/mnt/adithya/ViTPoseoutput/10_out_H.mp4")
     parser.add_argument("--codec", type=str, default="MJPG")
     parser.add_argument("--detmodel_name", type=str, default="SWIN-S")
     parser.add_argument("--box_score_threshold", type=float, default=0.3)
